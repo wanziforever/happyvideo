@@ -1,0 +1,356 @@
+<datamodel>
+ <!--This table is for manage files which are uploaded by async-mode-->
+  <table name="basic_vender" cached="False" descrip="提供商">
+    <field name="name" type="String" length="128" nullable="False" descrip="第三方内容提供商名称"/>
+    <field name="code" type="String" length="128" nullable="True" descrip="Vidda专用"/>
+    <field name="level" type="SmallInteger" nullable="False" descrip="提供商优先级别"/>
+    <field name="video_play_method" type="String" length="128" nullable="True" descrip="视频播放的方式"/>
+    <field name="video_play_package" type="String" length="128" nullable="True" descrip="视频播放包"/>
+    <field name="video_play_param" type="String" length="512" nullable="True" descrip="视频播放参数"/>
+    <field name="pic_link" type="String" length="1024" nullable="True" descrip="提供商图片"/>
+    <field name="application_package" type="String" length="512" nullable="True" descrip="应用包名"/>
+    <field name="status" type="Integer" nullable="False" default="1" descrip="是否可用"/>
+    <field name="online" type="SmallInteger" nullable="False" default="1" descrip="上下线"/>
+    <field name="o_application_packages" type="String" length="1024" nullable="True" descrip="不同应用包，就是有升级的"/>
+    <field name="video_play_version" type="String" length="1024" nullable="True" descrip="机型版本配置"/>
+    <field name="aggregate_status" type="Integer" nullable="False" default="1"/>
+    <field name="pay_callback_url" type="String" length="1024" nullable="True"/>
+    <field name="public_key" type="String" length="2048" nullable="True"/>
+    <field name="private_key" type="String" length="2048" nullable="True"/>
+    <field name="vender_public_key" type="String" length="2048" nullable="True"/>
+    <field name="subscript" type="String" length="1024" nullable="True"/>
+    <field name="coupon_script" type="String" length="1024" nullable="True"/>
+    <field name="host" type="String" length="1024" nullable="False" descrip="地址"/>
+    <field name="port" type="SmallInteger" nullable="False" descrip="端口"/>
+    <field name="db_name" type="String" length="256" nullable="False" descrip="Name for database"/>
+    <field name="url" type="String" length="256" descrip="抓取系统url"/>
+    <field name="default_site" type="String" length="255" descrip="数据默认上线系统"/>
+  </table>
+  <table name="vender_attr_mapping" cached="False" descrip="抓取对应表">
+    <field name="vender_id" type="BigInteger" nullable="False" index="True" descrip="提供商id"/>
+    <field name="type" type="String" length="100" nullable="False" index="True" descrip="自定义类型"/>
+    <field name="self_attr_value" type="String" length="256" nullable="True" descrip="类型自定义值"/>
+    <field name="mapping_attr_value" type="String" length="256" nullable="True" descrip="类型对应提供商的值"/>
+  </table>
+  <table name="oss_user" cached="False" descrip="用户登录">
+    <field name="name" type="String" length="200" nullable="False" descrip="console用户登录名称"/>
+    <field name="scope" type="String" length="1024" nullable="True" descrip="用户的权限，有编辑和浏览等"/>
+    <field name="convert_scope" type="String"  length="1024" nullable="True" descrip="用户权限对应的一个规则数"/>
+    <field name="staffId" type="BigInteger" nullable="True" index="True" descrip="用户在基础平台那边数据库的记录号"/>
+    <field name="password" type="String" length="1024" nullable="True" descrip="各个提供商用户密码"/>
+  </table>
+  <table name="medias_update_record" cached="False" descrip="视频编辑历史记录，各个字段与basic_media表字段相同">
+    <field name="title" type="String" length="250" nullable="True"/>
+    <field name="media_id" type="BigInteger" nullable="False" index="True"/>
+    <field name="vender" type="String" length="250" nullable="True"/>
+    <field name="vender_status" type="String" length="250" nullable="True"/>
+    <field name="vender_online" type="Integer" nullable="True" />
+    <field name="batch_user" type="String" length="64" nullable="True" />
+    <field name="onoff_vender" type="String" length="64" nullable="True" />
+    <field name="category_name" type="String" length="256"  nullable="True"/>
+    <field name="child_category_name" type="String" length="1024"  nullable="True"/>
+    <field name="summary" type="Text" nullable="True" descrip="简介"/>
+    <field name="operator" type="String" length="128" nullable="True" />
+    <field name="vender_ids" type="String" length="128" nullable="True" />
+  </table>
+  <table name="basic_category" cached="False" descrip="分类">
+    <field name="name" type="String" length="128" nullable="False" descrip="名称"/>
+    <field name="parent_id" type="BigInteger" nullable="True" index="True" descrip="父id"/>
+    <field name="is_series" type="SmallInteger" nullable="True" descrip="是否剧集"/>
+    <field name="is_collected" type="SmallInteger" nullable="True" descrip="是否可被收藏"/>
+    <field name="is_sync" type="SmallInteger" index="True" nullable="False" default ="1" descrip="数据同步是否完成"/>
+  </table>
+<table name="basic_media" cached="False">
+  <field name="title" type="String" length="250" nullable="False" index="True" descrip="专辑名字"/>
+  <field name="escape_title" type="String" length="250" nullable="True" descrip="专辑名字"/>
+  <field name="tag" type="String" length="1024" nullable="True" default="" descrip="标签，多个标签以分号;分隔"/>
+  <field name="summary" type="Text" nullable="True" descrip="简介"/>
+  <field name="definition" type="String" length="128" nullable="True" default="" descrip="清晰度|多清晰度用分号;分割 11 普清21高清31 超清41 原画"/>
+  <field name="pubdate" type="String" length="64" nullable="True" default="" descrip="发布时间"/>
+  <field name="rate" type="Float" nullable="True" default="0.0" descrip="视频评分"/>
+  <field name="is_clip" type="SmallInteger" nullable="True" default="0" descrip="是否是剪辑"/>
+  <field name="is_3d" type="SmallInteger" nullable="True" default="0" descrip="是否是3d"/>
+  <field name="online" type="Integer" nullable="True" default="0" descrip="是否上线"/>
+  <field name="available" type="String" length="128" nullable="False"  index="True" default='0'  descrip="是否上线"/>
+  <field name="total" type="Integer" nullable="True" default="0" descrip="系列剧总集数"/>
+  <field name="current" type="Integer" nullable="True" default="0" descrip="当前集数"/>
+  <field name="country" type="String" length="256" nullable="True" default="" descrip="国家，默认中国，多个国家以分号;分割"/>
+  <field name="language" type="String" length="512" nullable="True" default="" descrip="语言"/>
+  <field name="image_url" type="String" length="1024" nullable="True" descrip="图片"/>
+  <field name="search_index" type="Float" nullable="True" default="0.0" descrip="排序"/>
+  <field name="fee" type="SmallInteger" nullable="True" index="True" default="0" descrip="是否付费"/>
+  <field name="sort_program" type="SmallInteger" nullable="True" default="0" descrip="剧集正反序"/>
+  <field name="directors" type="String" length="1024" nullable="True" default="" descrip="导演，逗号分割"/>
+  <field name="actors" type="String" length="1024" nullable="True" default="" descrip="演员，逗号分割"/>
+  <field name="category_id" type="String" length="255"  nullable="True" index="True" descrip="分类id"/>
+  <field name="child_category" type="String" length="1024" nullable="True" default="" descrip="二级分类,逗号分隔"/>
+  <field name="button_name" type="String" length="128" nullable="True" index="True"  default="" descrip="数据来源文件名称"/>
+  <field name="show_detail" type="SmallInteger" nullable="True" index="True"  default="1" descrip="数据来源文件名称"/>
+  <field name="is_4k" type="SmallInteger" nullable="False" default="0" descrip="数据来源文件名称"/>
+  <field name="show_horizontal_image" type="SmallInteger" nullable="False" default="0" descrip="数据来源文件名称"/>
+  <field name="audit_status" type="SmallInteger" nullable="False" default="1000" descrip="审核状态"/>
+  <field name="source_type" type="SmallInteger" nullable="False" default="0" descrip="运营Field， 0 for auto scrapy from third party, 1 for manual insert"/>
+  <field name="locked_fields" type="String" length="1024" descrip="运营修改字段集合"/>
+  <field name="site_status" type="String" length="255" index="True" descrip="媒资数据对应线上系统"/>
+  <field name="description" type="String" length="1024" descrip="运营人员维护，可以存储下线原因及其他说明"/>
+  <field name="tvod_info" type="String" length="1024" nullable="True" default="" descrip="单点片源价格信息"/>
+  <field name="vip_id" type="String" length="1024" nullable="True" default="" descrip="专区信息"/>
+  <field name="hot_flag" type="SmallInteger" nullable="True" default="0" descrip="是否热片"/>
+  <field name="sohu_flag" type="SmallInteger" nullable="True" default="0" descrip="是否搜狐片源"/>
+  <field name="horizontal_image_url" type="String" length="1024" nullable="True" descrip="视频列表|猜你喜欢图片地址"/>
+  <field name="is_sync" type="SmallInteger" index="True" nullable="False" default ="1" descrip="数据同步是否完成"/>
+</table>
+<table name="basic_program" cached="False" descrip="视频表">
+  <field name="media_id" type="BigInteger" nullable="True" index="True" descrip="媒体引用"/>
+  <field name="title" type="String" length="250" nullable="False" descrip="视频名称"/>
+  <field name="series" type="BigInteger" nullable="True" default="0" descrip="集数"/>
+  <field name="current" type="Integer" nullable="True" default="0" descrip="当前集数"/>
+  <field name="total" type="Integer" nullable="True" default="0" descrip="系列剧总集数"/>
+  <field name="language" type="String" length="64" nullable="True" default="" descrip="语言"/>
+  <field name="time_length" type="Integer" nullable="True" default="0" descrip="时长|单位（秒）"/>
+  <field name="vender_id" type="SmallInteger" nullable="False" index="True" descrip="提供商id"/>
+  <field name="video_play_url" type="String" length="512" nullable="True" default="" descrip="网站播放地址"/>
+  <field name="video_quality" type="String" length="64" default="31" nullable="True"/>
+  <field name="fee" type="SmallInteger" nullable="True" default="0"  descrip="是否付费"/>
+  <field name="video_play_param" type="String" length="4096" nullable="True" default="" descrip="播放参数json格式"/>
+  <field name="image_url" type="String" length="1024" nullable="True" default="" descrip="视频列表|猜你喜欢图片地址"/>
+  <field name="ref_media_source_id" type="String" length="40" index="True"  default="" nullable="False"/>
+  <field name="ref_parent_media_source_id" type="String" length="64" index="True" default="" nullable="True"/>
+  <field name="ref_program_source_id" type="String" length="64" index="True" default="" nullable="True"/>
+  <field name="pubdate" type="String" length="200" nullable="True" descrip="发布时间"/>
+  <field name="ptype" type="SmallInteger" nullable="True" default="0" descrip="性别"/>
+  <field name="sub_title" type="String" length="256" nullable="True" default="" descrip="视频名称"/>
+  <field name="horizontal_image_url" type="String" length="1024" nullable="True" descrip="视频列表|猜你喜欢图片地址"/>
+  <field name="audit_status" type="SmallInteger" nullable="False" default="1000" descrip="审核状态"/>
+  <field name="source_type" type="SmallInteger" nullable="False" default="0" descrip="运营Field， 0 for auto scrapy from third party, 1 for manual insert"/>
+  <field name="locked_fields" type="String" length="1024" descrip="运营修改字段集合"/>
+  <field name="pubdate" type="String" length="64" nullable="True" default="" descrip="发布时间"/>
+  <field name="try_flag" type="SmallInteger" nullable="True" default="0" descrip="优酷是否支持试看"/>
+</table>
+<table name="audit" cached="False" descrip="视频表">
+  <field name="editor" type="String" length="250" nullable="False" descrip="编辑者"/>
+  <field name="auditor" type="String" length="250" nullable="True" descrip="审核者"/>
+  <field name="parent_table" type="String" length="64" nullable="False" descrip="相关表"/>
+  <field name="parent_id" type="BigInteger" nullable="True" descrip="相关内容id"/>
+  <field name="audit_table" type="String" length="64" nullable="False" descrip="审核表"/>
+  <field name="action_type" type="SmallInteger" nullable="False" descrip="更改类型"/>
+  <field name="content_id" type="BigInteger" nullable="True" descrip="内容id"/>
+  <field name="destination" type="Text" nullable="True" descrip="审核内容"/>
+  <field name="content" type="Text" nullable="True" descrip="审核内容"/>
+  <field name="content_original" type="Text" nullable="True" descrip="审核之前内容"/>
+  <field name="content_title" type="String" length="250" nullable="True" default="" descrip="内容标题"/>
+  <field name="desc_edit" type="String" length="250" nullable="True" default="" descrip="修改描述"/>
+  <field name="desc_audit" type="String" length="250" nullable="True"  default="" descrip="审核描述"/>
+  <field name="review_status" type="SmallInteger" nullable="False" default='1' descrip="终端审核状态"/>
+  <field name="audit_status" type="SmallInteger" nullable="False" default='0' descrip="审核状态"/>
+  <field name="review_time" type="BigInteger" nullalbe="True" index="True" descrip="上线时间"/>
+  <field name="audit_time" type="BigInteger" nullalbe="True" index="True" descrip="审核时间"/>
+  <field name="device_id" type="String" length="250" default="" descrip="审核机器ID"/>
+  <field name="result" type="Text" nullable="True" descrip="审核执行详细结果"/>
+</table>
+
+<table name="site_system" cached="False" descrip="视频表">
+  <field name="url" type="String" length="1024" nullable="False" descrip="线上系统上传视频接口URL"/>
+  <field name="name" type="String" length="256" descrip="线上系统名称"/>
+  <field name="if_version" type="SmallInteger" nullable="False" default = '0'  descrip="接口版本"/>
+  <field name="if_version_lock" type="SmallInteger" nullable="False" default = '0'  descrip="是否允许自动修改"/>
+</table>
+
+<table name="rule_vender" cached="False" descrip="视频表">
+  <field name="vender" type="String" length="1024" nullable="False" descrip="地址"/>
+  <field name="action_type" type="String" length="1024" descrip="端口"/>
+  <field name="source_type" type="String" length="1024" nullable="False" descrip="Name for database"/>
+  <field name="allow" type="SmallInteger" length="256" nullable="False" descrip="Name for database"/>
+  <field name="description" type="String" length="1024" descrip="抓取系统名称"/>
+</table>
+
+<table name="rule_media" cached="False" descrip="视频表">
+  <field name="vender_id" type="BigInteger" nullable="False" index="True" descrip="媒体引用"/>
+  <field name="media_id" type="BigInteger" nullable="False" index="True" descrip="媒体引用"/>
+  <field name="allow" type="SmallInteger" length="256" nullable="False" descrip="Name for database"/>
+</table>
+
+<table name="import_history" cached="False" descrip="mongo导入到媒资历史记录表">
+  <field name="vender_id" type="BigInteger" nullable="False" index="True" descrip="提供商id"/>
+  <field name="media_id" type="BigInteger" nullable="False" index="True" descrip="媒资id"/>
+  <field name="media_title" type="String" length="250" nullable="False" descrip="视频名称"/>
+  <field name="ref_media_source_id" type="String" length="40" default="" nullable="False" descrip="第三方源媒资id"/>
+  <field name="username" type="String" length="128" index="True" nullable="False" descrip="console用户登录名称"/>
+  <field name="action" type="SmallInteger" nullable="False" descrip="更改类型"/>
+</table>
+
+<table name="hot_media" cached="False" descrip="热片列表">
+  <field name="vender_id" type="BigInteger" nullable="False" index="True" descrip="提供商id"/>
+  <field name="ref_media_source_id" type="String" length="40" nullable="False" index="True" descrip="第三方源媒资id"/>
+  <field name="node_id" type="String" length="40" nullable="True" descrip="第三方源媒资id"/>
+  <field name="media_id" type="BigInteger" nullable="True" index="True" descrip="媒资id"/>
+  <field name="schedule" type="String" length="250" nullable="True" descrip="第三方源媒资id"/>
+  <field name="finished" type="String" length="40" nullable="True" default='0' index="True" descrip="第三方源媒资id"/>
+</table>
+
+<table name="oss_operation_history" cached="False" descrip="操作记录">
+  <field name="resource_type" type="BigInteger" nullable="False" index="True" descrip="记录类型"/>	
+  <field name="resource_id" type="BigInteger" nullable="False" index="True" descrip="记录id"/>
+  <field name="resource_title" type="String" length="250" nullable="False" descrip="视频名称"/>
+  <field name="username" type="String" length="128" index="True" nullable="False" descrip="console用户登录名称"/>
+  <field name="action" type="SmallInteger" nullable="False" descrip="更改类型"/>
+</table>
+
+<table name="resource_site_status_rel" cached="False" descrip="片源在各推荐平台状态">
+  <field name="resource_type" type="String" length="128" nullable="False" index="True" descrip="记录类型"/>  
+  <field name="resource_id" type="BigInteger" nullable="False" index="True" descrip="记录id"/>
+  <field name="site_id" type="BigInteger" nullable="False" index="True" descrip="推荐平台ID"/>
+  <field name="online" type="SmallInteger" index="True" nullable="False" descrip="片源在推荐平台是否运营上线"/>
+</table>
+
+<table name="basic_liveshow" cached="False">
+	<field name="sourceId" type="String" length="64" nullalbe="False" index="True"/>
+    <field name="vender_id" type="Integer" nullalbe="False" index="True"/>
+    <field name="title" type="String" length="250"  nullable="False"/>
+    <field name="subTitle" type="String" length="250" />
+    <field name="remark" type="String" length="512"  />
+    <field name="desc" type="String" length="1024"  />
+    <field name="pic1" type="String" length="1024" />
+    <field name="pic2" type="String" length="1024" />
+    <field name="configPic" type="String" length="1024" nullable="True"/>
+    <field name="startTime" type="Integer" nullalbe="True"/>
+    <field name="endTime" type="Integer" nullalbe="True"/>
+    <field name="duration" type="Integer" nullalbe="True"/>
+    <field name="replayStartTime" type="Integer" nullalbe="True"/>
+    <field name="replayEndTime" type="Integer" nullalbe="True"/>
+    <field name="templet" type="SmallInteger" nullalbe="True" default="0"/>
+    <field name="video_play_param" type="String" length="2048" nullalbe="True" />
+    <field name="escape_title" type="String" length="250" nullable="False" index="True"/>
+    <field name="fee" type="SmallInteger" nullalbe="True"/>
+    <field name="vip_id" type="Integer" nullalbe="True"/>
+    <field name="category_id" type="Integer" nullalbe="True"/>
+    <field name="category_name" type="String" length="250" nullable="true"/>
+    <field name="is_video" type="SmallInteger" nullalbe="True"/>
+    <field name="team_info" type="String" length="2045" nullable="true"/>
+    <field name="status" type="SmallInteger" default="1" nullalbe="True"/>
+    <field name="is_sync" type="SmallInteger" index="True" nullable="False" default ="1" descrip="数据同步是否完成"/>
+    <field name="site_status" type="String" length="255" index="True" descrip="媒资数据对应线上系统"/>
+    <field name="locked_fields" type="String" length="1024" descrip="运营修改字段集合"/>
+    <field name="valid" type="SmallInteger" default='1' descrip="上下线状态"/>
+ </table>
+
+  <table name="basic_entertainer" cached="True" descrip="演员导演表">
+    <field name="country" type="String" length="128" nullable="True" descrip="国家"/>
+    <field name="origin_name" type="String" length="128" nullable="True" descrip="原名"/>
+    <field name="stagename" type="String" length="128" nullable="False" index="True" descrip="中文姓名"/>
+    <field name="aka" type="String" length="512" nullable="True" descrip="别名|多个别名以分号;分隔"/>
+    <field name="birthday" type="String" length="64" nullable="True" descrip="生日"/>
+    <field name="biography" type="Text" nullable="True" descrip="简介"/>
+    <field name="gender" type="SmallInteger" nullable="True" descrip="性别"/>
+    <field name="career" type="String" length="512" nullable="True" descrip="职业|多个职业以分号;分隔"/>
+    <field name="works" type="Text" nullable="True" descrip="作品|多作品以分号|分割"/>
+    <field name="is_sync" type="SmallInteger" index="True" nullable="False" default ="1" descrip="数据同步是否完成"/>
+  </table>
+  
+ <table name="update_history" cached="False" descrip="自动操作记录表">
+  <field name="resource_type" type="String" length="128" nullable="False" index="True" descrip="记录类型"/>  
+  <field name="resource_id" type="BigInteger" nullable="False" index="True" descrip="记录id"/>
+  <field name="resource_title" type="String" length="250" nullable="False" index="True" descrip="视频名称"/>
+  <field name="auto" type="SmallInteger" nullable="True" index="True" descrip="是否自动操作"/>
+  <field name="action" type="SmallInteger" nullable="False" index="True" descrip="更改类型"/>
+  <field name="is_success" type="SmallInteger" nullable="False" descrip="是否成功"/>
+  <field name="error_type" type="String" length="128" nullable="True" descrip="错误类型"/>
+  <field name="error_desc" type="Text" nullable="True" descrip="错误说明"/>
+ </table>
+
+<!-- table defined schema definition -->
+<!-- for schema id re-arch, from the point on, the old table defined
+     will be made from 1000 to 1056, new table defined schema id should
+     follow 1100-->
+<Schema name="schema_basic_vender" id="1013"/>
+<Schema name="schema_basic_category" id="1017"/>
+<Schema name="schema_basic_media" id="1018"/>
+<Schema name="schema_basic_program" id="1020"/>
+<Schema name="schema_vender_attr_mapping" id="1026"/>
+<Schema name="schema_oss_user" id="1029"/>
+<Schema name="schema_medias_update_record" id="1032"/>
+<Schema name="schema_audit" id="1105"/>
+<Schema name="schema_site_system" id="1107"/>
+<Schema name="schema_import_system" id="1108"/>
+<Schema name="schema_rule_vender" id="1109"/>
+<Schema name="schema_rule_media" id="1110"/>
+<Schema name="schema_import_history" id="1111"/>
+<Schema name="schema_hot_media" id="1112"/>
+<Schema name="schema_oss_operation_history" id="1113"/>
+<Schema name="schema_resource_site_status_rel" id="1114"/>
+<Schema name="schema_basic_liveshow" id="1115"/>
+<Schema name="schema_basic_entertainer" id="1116"/>
+<Schema name="schema_update_history" id="1117"/>
+
+<!-- new user defined schema name should be follow 4000-->
+<Schema name="schema_Basic_Media_new_media" id="4004"/>
+<Schema name="schema_Basic_Program_new_media" id="4005"/>
+<Schema name="schema_audit_manage" id="4006"/>
+<Schema name="schema_common_db_manage" id="4007"/>
+<Schema name="schema_preview_manage" id="4008"/>
+<Schema name="schema_hot_media_manage" id="4009"/>
+<Schema name="schema_liveshow_manage" id="4010"/>
+<Schema name="schema_import_media" id="4011"/>
+<!-- Data type definition is here.
+     old data type definition from table index is from 2000 to 2052-->
+<DataType name="data_type_all_by_id" id="2000"/>
+<DataType name="data_type_all_by_title" id="2016"/>
+<DataType name="data_type_all_by_escape_title" id="2017"/>
+<DataType name="data_type_all_by_media_id" id="2024"/>
+<DataType name="data_type_all_by_ref_media_source_id" id="2025"/>
+<DataType name="data_type_all_by_ref_video_source_id" id="2026"/>
+<DataType name="data_type_all_by_ref_program_source_id" id="2027"/>
+<DataType name="data_type_all_by_ref_parent_media_source_id" id="2028"/>
+<DataType name="data_type_update_by_ref_media_source_id" id="2029"/>
+<DataType name="data_type_all_by_staffId" id="2030"/>
+<DataType name="data_type_all_by_username" id="2031"/>
+<DataType name="data_type_update_by_ref_parent_media_source_id" id="2032"/>
+<DataType name="data_type_update_by_ref_program_source_id" id="2033"/>
+<DataType name="data_type_query_all" id="2054"/>
+<DataType name="data_type_update_by_id" id="2056"/>
+<DataType name="data_type_insert_record" id="2057"/>
+<DataType name="data_type_del_by_id" id="2058"/>
+<DataType name="data_type_query_all_vender_list" id="2110"/>
+<DataType name="data_type_audit_pass" id="3002"/>
+<DataType name="data_type_audit_reject" id="3003"/>
+<DataType name="data_type_all_by_vender_id" id="3005"/>
+<DataType name="data_type_rule_media" id="3006"/>
+<DataType name="data_type_query_audit_media" id="3007"/>
+<DataType name="data_type_query_audit_basic_media" id="3008"/>
+<DataType name="data_type_count_audit_media" id="3009"/>
+<DataType name="data_type_query_program_info" id="3010"/>
+<DataType name="data_type_update_audit_status" id="3011"/>
+<DataType name="data_type_query_audit_by_mediaid" id="3012"/>
+<DataType name="data_type_query_available_media_for_rule" id="3013"/>
+<DataType name="data_type_media_pass" id="3014"/>
+<DataType name="data_type_media_reject" id="3015"/>
+<DataType name="data_type_query_media_with_ref_source_id" id="3016"/>
+<DataType name="data_type_query_available_media_for_hot_schedule" id="3017"/>
+<DataType name="data_type_query_hot_media_list" id="3018"/>
+<DataType name="data_type_finish_hot_media_schedule" id="3019"/>
+<DataType name="data_type_media_onoff_line_direct" id="3020"/>
+<DataType name="data_type_update_media_site_status" id="3021"/>
+<DataType name="data_type_query_by_source_id" id="3022"/>
+<DataType name="data_type_insert_record" id="3023"/>
+<DataType name="data_type_update_by_id" id="3024"/>
+<DataType name="data_type_list_liveshow" id="3025"/>
+<DataType name="data_type_by_showId" id="3026"/>
+<!--<DataType name="data_type_update_show" id="3027"/>-->
+<DataType name="data_type_delete_by_id" id="3027" />
+<DataType name="data_type_query_duration_liveshow" id="3028" />
+<DataType name="data_type_update_status_by_source_id" id="3029" />
+<DataType name="data_type_import_media_update_parent" id="3030"/>
+<DataType name="data_type_import_media_offline" id="3031"/>
+<DataType name="data_type_import_media_update" id="3032"/>
+<DataType name="data_type_import_media_add" id="3033"/>
+<DataType name="data_type_import_media_add_child" id="3034"/>
+<DataType name="data_type_import_entertainer_add" id="3035"/>
+<DataType name="data_type_sync_media_site_status" id="3036"/>
+<DataType name="data_type_query_basic_category_all" id="3037"/>
+<DataType name="data_type_attr_mapping_by_vender_id_category" id="3038"/>
+<DataType name="data_type_liveshow_sport_category" id="3039"/>
+<DataType name="data_type_query_media_preview_pic_url" id="3040"/>
+  <!-- cachePolicy will define the cache policy for schema and datatype pair
+       if the time is set to 0, that means the the cache will not timeout
+       any value less than 0 will be treated as a invalid record -->
+</datamodel>

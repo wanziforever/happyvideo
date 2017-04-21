@@ -1,0 +1,31 @@
+#!/bin/bash
+# nothing to do with the install callback currently
+
+current_path="$(cd "$(dirname ${0})" && pwd)"
+# generate the uwsgi configuration file
+uwsgi_config="[uwsgi]
+    socket=0.0.0.0:9090
+    master=true
+    processes=8
+    lazy-apps =true
+    chdir=${current_path}
+    wsgi-file=core/app.py
+    daemonize=/var/log/uwsgi.log
+    pythonpath=${current_path}
+    pidfile=${current_path}/kernel.pid
+"
+uwsgi_config_master="[uwsgi]
+    socket=0.0.0.0:9090
+    master=true
+    processes=8
+    lazy-apps =true
+    chdir=${current_path}
+    wsgi-file=core/app.py
+    daemonize=/var/log/uwsgi_master.log
+    pythonpath=${current_path}
+    pidfile=${current_path}/kernel_master.pid
+"
+echo "${uwsgi_config}" > ${current_path}/uwsgi.config
+#echo "${uwsgi_config_master}" > ${current_path}/uwsgi_master.config
+
+exit 0

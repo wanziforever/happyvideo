@@ -1,0 +1,26 @@
+#!/bin/bash
+
+if [ ! -n ${PLAT_BIN} ]; then
+    echo "PLAT_BIN environment variable not set"
+    exit 1
+fi
+
+UWSGI="${PLAT_BIN}/uwsgi"
+
+test -x ${UWSGI} || exit 1
+
+if [ ! -n ${SMS} ]; then
+    echo "SMS environment variable not set"
+    exit 1
+fi
+
+current_path="$(cd "$(dirname ${0})" && pwd)"
+$UWSGI --ini ${current_path}/uwsgi.config
+
+pids=`ps -ef | grep uwsgi | grep -v "grep" | awk '{print $2}'`
+if [ "x${pids}" == "x" ] ; then
+    echo "fail to launch, no uwsgi process found"
+    exit 1
+fi
+
+exit 0
