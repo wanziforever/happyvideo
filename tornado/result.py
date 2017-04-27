@@ -23,7 +23,7 @@ class SuccResult(object):
         self.data = []
 
     def export(self):
-        ret = {'result': 'succeed',
+        ret = {'result': 'success',
                'data': self.data,
                'msg': self.succ_msg}
         return json.dumps(ret)
@@ -37,6 +37,6 @@ class FailResult(object):
         self.failed_msg = msg
 
     def export(self):
-        ret = {'result': 'failed',
+        ret = {'result': 'fail',
                'msg': self.failed_msg}
         return json.dumps(ret)

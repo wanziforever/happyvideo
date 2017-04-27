@@ -1,0 +1,16 @@
+{
+    "out_trade_no":"213123",
+    "undiscountable_amount":"0.01",
+    "total_amount":"1231",
+    "subject":"123123",
+    "seller_id": "",
+    "body":"购买商品2件共15.00元",
+    "goods_detail":[
+        {"goods_id":"apple-01","goods_name":"iphone","quantity":1,"price":3000},
+        {"goods_id":"apple-02","goods_name":"ipad","quantity":1,"price":1000}
+        ],
+    "operator_id":"test_operator_id",
+    "store_id":"test_store_id",
+    "extend_params":{"sys_service_provider_id":"2088100200300400500"},
+    "timeout_express":"5m"
+}

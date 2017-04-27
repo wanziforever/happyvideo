@@ -3,11 +3,11 @@
 import logging
 import os
 
-def init_log():
+def init_log(cf):
     logging.basicConfig(level=logging.DEBUG,
                             format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                             datefmt='%a, %d %b %Y %H:%M:%S',
-                            filename='/home/postgres/mylog',
+                            filename=cf.get('server', 'logfile'),
                             filemode='w')
 
 
@@ -42,18 +42,14 @@ class MyLog(object):
         self.enable = False
 
     def trace(self, traceid, msg):
-        print self.enable, traceid, self.open_traces
         if not self.enable:
-            print "======not enabled==="
             return
         
         if traceid not in self.open_traces:
-            print "====not in ====", type(traceid), type(self.open_traces[0])
             return
         
         logging.debug(msg)
         
-init_log()
 mylog = MyLog()
 debug = mylog.trace
 turn_on_debug = mylog.on

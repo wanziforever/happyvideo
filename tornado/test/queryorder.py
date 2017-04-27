@@ -6,11 +6,9 @@ import sys
 import ConfigParser
 
 params = {
-    'orderid': '1112223331492761236905280000'
+    'orderId': '1112223331493304304422230000',
     }
-api = "/order/confirm/wechat_callback"
-#api = "/order/confirm/waadfads_callback"
-api = "/order/confirm/alipay_callback"
+api = "/order/query"
 
 cf = ConfigParser.ConfigParser()
 
@@ -22,4 +20,7 @@ if __name__ == "__main__":
     cf.read('test.conf')
     url = setup_url()
     r = requests.get(url, params)
+    print r.url
     print r.text
+    
+    

@@ -1,0 +1,3 @@
+Thu, 27 Apr 2017 23:17:38 log.py[line:51] DEBUG OrderQueryHandler->get() enter: url: /order/query?orderId=1112223331493304304422230000, params: {'orderId': ['1112223331493304304422230000']}
+Thu, 27 Apr 2017 23:17:38 log.py[line:51] DEBUG order query, got 1 order 1112223331493304304422230000, status is PAYED
+Thu, 27 Apr 2017 23:17:38 web.py[line:1971] INFO 200 GET /order/query?orderId=1112223331493304304422230000 (127.0.0.1) 26.82ms

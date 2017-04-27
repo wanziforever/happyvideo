@@ -8,9 +8,10 @@ import ConfigParser
 params = {
     'orderid': '1112223331492761236905280000'
     }
-api = "/order/confirm/wechat_callback"
-#api = "/order/confirm/waadfads_callback"
-api = "/order/confirm/alipay_callback"
+data = {
+    'postorderid': '1112223331492761236905280000'
+    }
+api = "/post/test"
 
 cf = ConfigParser.ConfigParser()
 
@@ -21,5 +22,7 @@ def setup_url():
 if __name__ == "__main__":
     cf.read('test.conf')
     url = setup_url()
-    r = requests.get(url, params)
+    print url
+    r = requests.post(url, params=params, data=data)
     print r.text
+    

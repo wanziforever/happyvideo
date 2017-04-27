@@ -9,7 +9,7 @@ params = {
     'domainId': '111',
     'roomId': '222',
     'deviceId': '333',
-    'videoId': '444',
+    'videoId': '3434535',
     }
 api = "/order/validate"
 
@@ -22,9 +22,8 @@ def setup_url():
 if __name__ == "__main__":
     cf.read('test.conf')
     url = setup_url()
-    print url
-    print params
     r = requests.get(url, params)
+    print r.url
     print r.text
     
     

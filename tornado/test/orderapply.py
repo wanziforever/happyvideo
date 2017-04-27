@@ -11,10 +11,10 @@ params = {
     'deviceId': '333',
     'videoId': '3434535',
     'videoName': '外科风云',
-    'platform': 'wechat',
+    'platform': 'alipay',
     'appVersionCode': '34.346.34',
-    'appVersionName': 'newdevelopedversion',
-    'fee': '32'
+    'appVersionName': '版本号',
+    'fee': '1'
     }
 api = "/order/apply"
 
@@ -29,6 +29,7 @@ if __name__ == "__main__":
     cf.read('test.conf')
     url = setup_url()
     r = requests.get(url, params)
+    print r.url
     print r.text
     
     
