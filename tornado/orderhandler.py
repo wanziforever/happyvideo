@@ -8,9 +8,12 @@ from db import session
 from schema import order
 from traces import Trace
 from log import debug
+from urllib import quote_plus
 from result import SuccResult, FailResult
 from sqlalchemy.orm.exc import NoResultFound
+import traceback
 import ConfigParser
+import xmltodict
 
 import sys
 reload(sys)
@@ -19,6 +22,7 @@ sys.setdefaultencoding('utf-8')
 cf = ConfigParser.ConfigParser()
 cf.read('trade.conf')
 query_loop_interval = cf.get('common', 'query_loop_interval')
+wx_qr_parser_url = cf.get('wxpay_trade_common', 'qr_parser_url')
                           
 
 class ResourceType():
@@ -71,22 +75,25 @@ class OrderApplyHandler(tornado.web.RequestHandler):
         self.platform = self.get_argument('platform').lower()
         
 
-        if self.platform not in ('wechat', 'alipay'):
+        if self.platform not in ('wxpay', 'alipay'):
             self.write(FailResult('invalid charging platform %s'
                                   % self.platform).export())
             return
         
         self.orderid = self.get_new_order()
+        if not self.orderid:
+            raise Exception("order is needed for creating a order")
 
         qr_code = ""
 
         try:
-            if self.platform == 'wechat':
-                qr_code = self.get_wechat_qr()
+            if self.platform == 'wxpay':
+                qr_code = self.get_wxpay_qr()
             else:
                 qr_code = self.get_alipay_qr()
         except Exception, e:
-            debug(Trace.ORDER_APPLY, "error getting qrcode, %s" % str(e))
+            exc = traceback.format_exc()
+            debug(Trace.ORDER_APPLY, "error getting qrcode, %s" % exc)
             self.write(FailResult(str(e)).export())
             return
         
@@ -124,7 +131,8 @@ class OrderApplyHandler(tornado.web.RequestHandler):
         session.commit()
 
         debug(Trace.ORDER_APPLY,
-              "create db record for order %s successfully" % orderid)
+              "create db record for order %s successfully fro %s"
+              % (orderid, self.platform))
 
         return orderid
         
@@ -132,20 +140,38 @@ class OrderApplyHandler(tornado.web.RequestHandler):
         time_id = str(int(time.time()*1000))+str(int(time.clock()*1000000))
         return vec1 + vec2 + vec3 + str(time_id)
 
-    def get_wechat_qr(self):
-        return "http://47.90.6.240"
+    def get_wxpay_qr(self):
+        from wxpay_trade import WXpayTrade
+        from tradeorder import WXTradeOrder
+        from wxtraderequest import WXTradePayRequest
+        
+        trade = WXpayTrade()
+        order = WXTradeOrder(self.orderid, self.videoname)
+        order.set_body(self.videoname)
+        order.set_fee(self.fee)
+        order.set_goods_tag(self.videoname)
+        order.set_product_id(self.videoid)
+        trade.set_order(order)
+
+        debug(Trace.ORDER_APPLY, order.to_string())
+        debug(Trace.ORDER_APPLY, trade.to_string())
+
+        req = WXTradePayRequest(trade)
+        resp = req.send()
+        partial_url = resp['code_url']
+        qr_url = wx_qr_parser_url + "?data=" + quote_plus(partial_url)
+        return qr_url
+        
 
     def get_alipay_qr(self):
         from alipay_trade import AlipayPreCreateTrade
-        from tradeorder import TradeOrder
+        from tradeorder import AliTradeOrder
         from goods import Goods
-        from traderequest import PreCreateTradeRequest
+        from alitraderequest import AliPreCreateTradeRequest
             
         precreate_trade = AlipayPreCreateTrade()
-        if not self.orderid:
-            raise Exception("order is needed for creating a order")
         
-        test_order = TradeOrder(self.orderid, self.videoname)
+        test_order = AliTradeOrder(self.orderid, self.videoname)
         goods = Goods(self.videoid, self.videoname,
                       1, self.fee)
         test_order.set_body(self.videoname)
@@ -157,7 +183,7 @@ class OrderApplyHandler(tornado.web.RequestHandler):
         debug(Trace.ORDER_APPLY, precreate_trade.to_string())
         
 
-        req = PreCreateTradeRequest(precreate_trade)
+        req = AliPreCreateTradeRequest(precreate_trade)
         resp = req.send()
         
         status = resp['code']
@@ -174,36 +200,56 @@ class OrderApplyHandler(tornado.web.RequestHandler):
 
 
 class OrderConfirmHandler(tornado.web.RequestHandler):
-    def post(self, platform):
-        debug_request_enter(self, Trace.ORDER_CB, "OrderConfirmHandler->post()")
-        
-        alipay_trade_no = self.get_argument('trade_no')
-        (seller_id, buyer_id, buyer_logon_id) = \
-                    get_arguments(self, 'seller_id', 'buyer_id', 'buyer_logon_id')
-        openid = self.get_argument('open_id')
-        orderid = self.get_argument('out_trade_no')
+    def initialize(self):
+        self.platform = ""
+        self.orderid = ""
+        self.resp_string_map = {
+            'wxpay': {'succ': 'success', 'fail': 'fail'},
+            'alipay': {'succ': 'success', 'fail': 'fail'}
+            }
 
-        staus_to_be = OrderStatus.CREATED
-        trade_status = self.get_argument('trade_status')
-        if trade_status == 'WAIT_BUYER_PAY':
-            status_to_be = OrderStatus.WAIT_TO_PAY
+    def write_response(self, result='succ'):
+        try:
+            self.write(self.resp_string_map[self.platform][result])
+        except:
+            self.write("no valid result mapping")
+        
+        
+    def post(self, platform):
+        debug_request_enter(self, Trace.ORDER_CB,
+                            "OrderConfirmHandler->post()")
+        self.platform = platform.lower()
+        if self.platform not in ('wxpay', 'alipay'):
             debug(Trace.ORDER_CB,
-                  "order confirm notification to WAIT_TO_PAY for "
-                  "order %s" % orderid)
-        else:
-            status_to_be = OrderStatus.PAYED
+                  "invalid platform callback %s" % platform)
+            self.write("fail")
+            return
+        try:
+            if platform == 'alipay':
+                helper = self.handle_alipay_callback()
+            else:
+                helper = self.handle_wxpay_callback()
+        except Exception,e:
+            exc = traceback.format_exc()
             debug(Trace.ORDER_CB,
-                  "order confirm notification to PAYED for "
-                  "order %s" % orderid)
-            
-        query = session.query(order).filter(order.orderid==orderid)
+                  "fail to handler %s callback, %s" % exc)
+            self.write_response('fail')
+            return
+
+        if self.orderid == "":
+            debug(Trace.ORDER_CB, "fail to get order from %s callback"
+                  % self.platform)
+            self.write_response('fail')
+            return
+
+        query = session.query(order).filter(order.orderid==self.orderid)
         
         try:
             _tuple = query.one()
         except NoResultFound:
             debug(Trace.ORDER_CB,
-                  "fail to handle the request orderid(%s), no order exist"
-                  "in database" % orderid)
+                  "fail to handle the request orderid(%s), no order exist "
+                  "in database" % self.orderid)
             self.write("fail")
             return
 
@@ -211,43 +257,117 @@ class OrderConfirmHandler(tornado.web.RequestHandler):
         history = _tuple.history
         ts = int(time.time())
 
+        status_to_be = helper['to_status']
         if cur_status >= status_to_be:
             debug(Trace.ORDER_CB, "wrong status, currently is %d, but "
                   "incoming is %d" % (cur_status, status_to_be))
-
-            self.write("fail")
+            self.write_response("fail")
             return
 
         # history string  has risk to overflow the database definition
         history = _tuple.history + ("-> status %s change to %s by %s(at%s)"
                                     % (order_status_string[cur_status],
                                        order_status_string[status_to_be],
-                                       platform, str(ts)))
+                                       self.platform, str(ts)))
+
         updater = {
             order.status: status_to_be,
             order.finishtime: ts,
             order.history: history,
-            order.platform: platform,
-            order.thirdpartyorderid: alipay_trade_no,
+            #order.platform: platform,
+            order.thirdpartyorderid: helper['thirdparty_trade']
             }
+        
+        if status_to_be == OrderStatus.WAIT_TO_PAY:
+            updater[order.waittopayinfo] = helper['update_info']
+        elif status_to_be == OrderStatus.PAYED:
+            updater[order.payinfo] = helper['update_info']
+            
+        query.update(updater)
+        session.commit()
+        debug(Trace.ORDER_CB,
+              "successfully confirm the order %s to %s"
+              % (self.orderid, order_status_string[status_to_be]))
+
+        self.write_response('succ')
+
+
+    def handle_alipay_callback(self):
+        ''''''
+        # currently do not handle the fail callback message,
+        # since i did not ever seen a fail message, and don't know
+        # what the message look like
+        alipay_trade_no = self.get_argument('trade_no')
+        (seller_id, buyer_id, buyer_logon_id) = \
+                    get_arguments(self, 'seller_id', 'buyer_id',
+                                  'buyer_logon_id')
+        openid = self.get_argument('open_id')
+        self.orderid = self.get_argument('out_trade_no')
+
+        debug(Trace.ORDER_CB, "alipay callback tn:%s, orderid:%s, openid:%s"
+              % (alipay_trade_no, self.orderid, openid))
+
+        staus_to_be = OrderStatus.CREATED # will be override
+        trade_status = self.get_argument('trade_status')
+        
+        if trade_status == 'WAIT_BUYER_PAY':
+            status_to_be = OrderStatus.WAIT_TO_PAY
+            debug(Trace.ORDER_CB,
+                  "order confirm notification to WAIT_TO_PAY for "
+                  "order %s" % self.orderid)
+        else:
+            status_to_be = OrderStatus.PAYED
+            debug(Trace.ORDER_CB,
+                  "order confirm notification to PAYED for "
+                  "order %s" % self.orderid)
+
         info = json.dumps({
             'seller_id': seller_id,
             'buyer_id': buyer_id,
             'buyer_logon_id': buyer_logon_id,
             'open_id': openid
             })
-        if status_to_be == OrderStatus.WAIT_TO_PAY:
-            updater[order.waittopayinfo] = info
-        elif status_to_be == OrderStatus.PAYED:
-            updater[order.payinfo] = info
-            
-        query.update(updater)
-        session.commit()
-        debug(Trace.ORDER_CB,
-              "successfully confirm the order %s to %s"
-              % (orderid, order_status_string[status_to_be]))
+        helper = {
+            'to_status': status_to_be,
+            'thirdparty_trade': alipay_trade_no,
+            'update_info': info
+            }
 
-        self.write('success')
+        return helper
+
+    def handle_wxpay_callback(self):
+        try:
+            resp = xmltodict.parse(self.request.body)
+        except Exception, e:
+            exc = traceback.format_exc()
+            debug(Trace.ORDER_CB, "fail to handle wxpay callback for %s" % exc)
+            self.write_response('fail')
+            return
+
+        if 'xml' not in resp:
+            debug(Trace.ORDER_CB,
+                  "fail to handle wxpay callback, no xml tag found")
+            self.write_response('fail')
+            return
+        
+        rdata = resp['xml']
+        retcode = rdata['return_code']
+        if retcode.lower() != "success":
+            raise Exception('the return code from wxpay is %s' %retcode)
+            
+        info = json.dumps({
+            'open_id': rdata['openid'],
+            'transaction_id': rdata['transaction_id'],
+            })
+            
+        self.orderid = rdata['out_trade_no']
+        helper = {
+            'to_status': OrderStatus.PAYED,
+            'thirdparty_trade': rdata['transaction_id'],
+            'update_info': info
+            }
+        
+        return helper
 
 
 AUTH_MODE = (
@@ -295,7 +415,7 @@ class ResourceValidationHandler(tornado.web.RequestHandler):
               "%d of order has been found for query" % (len(_tuples)))
         
         for t in _tuples:
-            orders.append(t.orderid)
+            orders.append({'orderId': t.orderid, 'status': t.status})
 
         self.write(SuccResult(orders).export())
 

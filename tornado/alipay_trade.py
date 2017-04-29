@@ -59,7 +59,6 @@ class AlipayTrade(object):
         self.return_url = return_url
         self.timestamp = ""
         self.method = method
-        self.params_dict = {}
         
         self.initialize_from_conf()
 
