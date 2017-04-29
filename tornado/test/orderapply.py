@@ -11,6 +11,7 @@ params = {
     'deviceId': '333',
     'videoId': '3434535',
     'videoName': '外科风云',
+    #'platform': 'wxpay',
     'platform': 'alipay',
     'appVersionCode': '34.346.34',
     'appVersionName': '版本号',
