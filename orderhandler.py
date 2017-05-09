@@ -68,7 +68,7 @@ is: 2 times of validation api tornado instance than order apply, for example,
 import json
 import time
 import tornado.web
-from db import session
+from db import create_db_session
 from schema import order
 from traces import Trace
 from log import debug
@@ -117,6 +117,7 @@ def debug_request_enter(self, trace_num, funcinfo):
 
 class OrderApplyHandler(tornado.web.RequestHandler):
     def initialize(self):
+        self.session = create_db_session()
         self.platform = ""
         self.domain = ""
         self.room = ""
@@ -127,6 +128,11 @@ class OrderApplyHandler(tornado.web.RequestHandler):
         self.appvercode = ""
         self.appvername = ""
         self.orderid = ""
+
+    def cleanup(self):
+        if self.session is not None:
+            self.session.close()
+            self.session = None
         
     def get(self):
         debug_request_enter(self, Trace.ORDER_APPLY, "OrderApplyHandler->get()")
@@ -143,10 +149,12 @@ class OrderApplyHandler(tornado.web.RequestHandler):
         if self.platform not in ('wxpay', 'alipay'):
             self.write(FailResult('invalid charging platform %s'
                                   % self.platform).export())
+            self.cleanup()
             return
         
         self.orderid = self.get_new_order()
         if not self.orderid:
+            self.cleanup()
             raise Exception("order is needed for creating a order")
 
         qr_code = ""
@@ -160,6 +168,7 @@ class OrderApplyHandler(tornado.web.RequestHandler):
             exc = traceback.format_exc()
             debug(Trace.ORDER_APPLY, "error getting qrcode, %s" % exc)
             self.write(FailResult(str(e)).export())
+            self.cleanup()
             return
         
         debug(Trace.ORDER_APPLY, "qr info: %s" % qr_code)
@@ -171,6 +180,7 @@ class OrderApplyHandler(tornado.web.RequestHandler):
             'queryLoopInterval': query_loop_interval
             }
         self.write(SuccResult(data).export())
+        self.cleanup()
 
     def get_new_order(self):
         orderid = self.gen_orderid(self.domain, self.room, self.device)
@@ -192,11 +202,11 @@ class OrderApplyHandler(tornado.web.RequestHandler):
             status=OrderStatus.CREATED,
             history="created(%s)"%str(ts)
             )
-        session.add(order_table)
+        self.session.add(order_table)
         try:
-            session.commit()
+            self.session.commit()
         except OperationalError, e:
-            session.rollback()
+            self.session.rollback()
             raise Exception("operationalError for db, %s" % str(e))
 
         debug(Trace.ORDER_APPLY,
@@ -273,12 +283,18 @@ class OrderApplyHandler(tornado.web.RequestHandler):
 
 class OrderConfirmHandler(tornado.web.RequestHandler):
     def initialize(self):
+        self.session = create_db_session()
         self.platform = ""
         self.orderid = ""
         self.resp_string_map = {
             'wxpay': {'succ': 'success', 'fail': 'fail'},
             'alipay': {'succ': 'success', 'fail': 'fail'}
             }
+
+    def cleanup(self):
+        if self.session is not None:
+            self.session.close()
+            self.session = None
 
     def write_response(self, result='succ'):
         try:
@@ -314,7 +330,7 @@ class OrderConfirmHandler(tornado.web.RequestHandler):
             self.write_response('fail')
             return
 
-        query = session.query(order).filter(order.orderid==self.orderid)
+        query = self.session.query(order).filter(order.orderid==self.orderid)
         
         try:
             _tuple = query.one()
@@ -323,6 +339,7 @@ class OrderConfirmHandler(tornado.web.RequestHandler):
                   "fail to handle the request orderid(%s), no order exist "
                   "in database" % self.orderid)
             self.write("fail")
+            self.cleanup()
             return
 
         cur_status = _tuple.status
@@ -334,6 +351,7 @@ class OrderConfirmHandler(tornado.web.RequestHandler):
             debug(Trace.ORDER_CB, "wrong status, currently is %d, but "
                   "incoming is %d" % (cur_status, status_to_be))
             self.write_response("fail")
+            self.cleanup()
             return
 
         # history string  has risk to overflow the database definition
@@ -356,12 +374,13 @@ class OrderConfirmHandler(tornado.web.RequestHandler):
             updater[order.payinfo] = helper['update_info']
             
         query.update(updater)
-        session.commit()
+        self.session.commit()
         debug(Trace.ORDER_CB,
               "successfully confirm the order %s to %s"
               % (self.orderid, order_status_string[status_to_be]))
 
         self.write_response('succ')
+        self.cleanup()
 
 
     def handle_alipay_callback(self):
@@ -413,14 +432,12 @@ class OrderConfirmHandler(tornado.web.RequestHandler):
         except Exception, e:
             exc = traceback.format_exc()
             debug(Trace.ORDER_CB, "fail to handle wxpay callback for %s" % exc)
-            self.write_response('fail')
-            return
+            raise
 
         if 'xml' not in resp:
             debug(Trace.ORDER_CB,
                   "fail to handle wxpay callback, no xml tag found")
-            self.write_response('fail')
-            return
+            raise Exception("fail to handle wxpay callback, no xml tag found")
         
         rdata = resp['xml']
         retcode = rdata['return_code']
@@ -454,6 +471,14 @@ AUTH_MODE = (
 MODE_USED = 0
 INVALID_INTERVAL = 48 * 60 * 60
 class ResourceValidationHandler(tornado.web.RequestHandler):
+    def initialize(self):
+        self.session = create_db_session()
+
+    def cleanup(self):
+        if self.session is not None:
+            self.session.close()
+            self.session = None
+        
     def get(self):
         debug_request_enter(self, Trace.ORDER_CB,
                             "ResourceValidationHandler->get()")
@@ -468,7 +493,7 @@ class ResourceValidationHandler(tornado.web.RequestHandler):
               "order validation for user %s, and auth mode is %s"
               % (str([domain, room, device]), str(auth_users)))
         
-        query = session.query(order).filter(order.status==OrderStatus.PAYED,
+        query = self.session.query(order).filter(order.status==OrderStatus.PAYED,
                                             order.finishtime > curts-INVALID_INTERVAL,
                                             order.resourceid == videoid)
         self.compute_user_filter(query, auth_users, domain, room, device)
@@ -481,6 +506,7 @@ class ResourceValidationHandler(tornado.web.RequestHandler):
             debug(Trace.ORDER_VALIDATE,
                   "no order found for query %s" % str(query))
             self.write(SuccResult([]).export())
+            self.cleanup()
             return
 
         debug(Trace.ORDER_VALIDATE,
@@ -490,6 +516,7 @@ class ResourceValidationHandler(tornado.web.RequestHandler):
             orders.append({'orderId': t.orderid, 'status': t.status})
 
         self.write(SuccResult(orders).export())
+        self.cleanup()
 
     def compute_user_filter(self, query, auth_users, lvl1_user,
                             lvl2_user, lvl3_user):
@@ -502,6 +529,14 @@ class ResourceValidationHandler(tornado.web.RequestHandler):
 
 
 class OrderQueryHandler(tornado.web.RequestHandler):
+    def initialize(self):
+        self.session = create_db_session()
+
+    def cleanup(self):
+        if self.session is not None:
+            self.session.close()
+            self.session = None
+            
     def get(self):
         debug_request_enter(self, Trace.ORDER_QUERY,
                             "OrderQueryHandler->get()")
@@ -510,13 +545,16 @@ class OrderQueryHandler(tornado.web.RequestHandler):
         if not orderid:
             debug(Trace.ORDER_QUERY, "query order should privide a order info")
             self.write(FailResult('order info should not be empty').export())
+            self.cleanup()
             return
+        #_tuple = session.query(order).filter(order.orderid==orderid).one()
         try:
-            _tuple = session.query(order).filter(order.orderid==orderid).one()
+            _tuple = self.session.query(order).filter(order.orderid==orderid).one()
         except NoResultFound:
             debug(Trace.ORDER_QUERY, "order query, no order record found for "
                   "%s" % orderid)
             self.write(SuccResult([]).export())
+            self.cleanup()
             return
 
         debug(Trace.ORDER_QUERY, "order query, got 1 order %s, status is %s"
@@ -528,3 +566,4 @@ class OrderQueryHandler(tornado.web.RequestHandler):
             }
 
         self.write(SuccResult(data).export())
+        self.cleanup()

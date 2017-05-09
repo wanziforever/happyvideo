@@ -10,17 +10,20 @@ import tornado.web
 import ConfigParser
 import tornado
 import json
+import sys
 
 from db import db_initialize
 from log import init_log
 
 cf = ConfigParser.ConfigParser()
 CONFIG_FILE = 'server.conf'
+cf.read(CONFIG_FILE)
+port = cf.get('server', 'port')
 
 
 def display_important_conf(cf):
     """show some significant configuration parameters"""
-    print "server port: %s" % cf.get('server', 'port')
+    print "server port: %s" % port
     print "database host: %s" % cf.get('db', 'db')
     print "logfile: %s" % cf.get('server', 'logfile')
 
@@ -51,6 +54,8 @@ if __name__ == "__main__":
 
     init_log(cf)
     db_initialize(cf)
+    if len(sys.argv) > 1:
+        port = sys.argv[1]
 
     display_important_conf(cf)
 
@@ -67,5 +72,5 @@ if __name__ == "__main__":
         (r'/hello', HellowHandler)
         ])
     
-    application.listen(cf.get('server', 'port'))
+    application.listen(port)
     tornado.ioloop.IOLoop.instance().start()
