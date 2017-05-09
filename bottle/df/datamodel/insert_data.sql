@@ -1,1 +1,0 @@
-insert into `order` (id, customer_id, created_time, modified_time, deleted, orderid, resourceid, resourcetype, resourceinfo, vender, account, platform, status, price, lastupdateInfo, failtime, failreason, failreasoncode, info) values (1,1001,222,222,0,1,23,1, 'resourceinfo', 2, 'denny', 3,1,34, 'lastupdateinfo', 32, 'failreason', 32, 'info')

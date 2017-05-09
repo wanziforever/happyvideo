@@ -1,0 +1,16 @@
+python package that need to install
+
+tornado dependency
+pip install singledispatch
+pip install backports_abc
+
+
+mysql relates
+yum install mysql-devel
+pip install MySQL-python
+yum install mysql
+
+
+
+others
+pip install xmltodict
