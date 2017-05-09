@@ -516,7 +516,7 @@ class OrderQueryHandler(tornado.web.RequestHandler):
         except NoResultFound:
             debug(Trace.ORDER_QUERY, "order query, no order record found for "
                   "%s" % orderid)
-            self.write(SuccResult([]).expport())
+            self.write(SuccResult([]).export())
             return
 
         debug(Trace.ORDER_QUERY, "order query, got 1 order %s, status is %s"
